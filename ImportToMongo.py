@@ -6,14 +6,17 @@ data = pd.concat(pd.read_excel('D:/Docs/BDBA/information Systems/Group Project/R
                       , skiprows=1
                       , header=0
                       , skipfooter=1)
-                  ,ignore_index = True)#combine data from all excel sheets into single dataFrame
+                  ,ignore_index = True) ## this line is to combine data from all excel sheets into single dataFrame ##
 ## END - read data from all Excel Sheets ##
 
-fn = lambda row: str(row.CaseID) + '_' + str(row.City).replace(' ','_') + '_' + str(row.Date) # define a function for the new column
-col = data.apply(fn, axis=1) # get column data with an index
-data = data.assign(custom_cityid=col.values) # assign values to column 'custom_cityid'
+## START - define a function to create new column for dataframe ##
+fn = lambda row: str(row.CaseID) + '_' + str(row.City).replace(' ','_') + '_' + str(row.Date) 
+col = data.apply(fn, axis=1) ## this line is to apply above function on dataframe columns ##
+data = data.assign(custom_cityid=col.values) ## this line is to assign values to column 'custom_cityid' ##
+## END - define a function to create new column for dataframe ##
 
-citiesDF = data.filter(['custom_cityid'
+## START - create individual dataframes for each MongoDB collections ##
+citiesDF = data.filter(['custom_cityid' ## this line is to filter rows from the dataframe ##
                           , 'Date'
                           , 'City'
                           , 'CityPopulation'
@@ -54,28 +57,31 @@ solidwasteDF = data.filter(['custom_cityid'
                                , 'Rubber & Leather Waste'
                                , 'Wood Waste'
                                , 'Yard and Garden Green Waste'], axis = 1)
+## END - create individual dataframes for each MongoDB collections ##
 
 import pymongo
 from pymongo import MongoClient
 
 client = MongoClient("mongodb://localhost:27017/")
 
-# connecting to desired database
+## START - connecting to desired database ##
 # here "WasteManagement" is database name. if db does not exist it will create db automatically
 db = client["WasteManagement"]
+## END - connecting to desired database ##
 
-# connecting to a collection, where our data will be stored.
-# if it does not exist. It will create automatically.
+## START - connecting to a collection, where our data will be stored ##
+## if collection does not exist. It will be created automatically ##
 collectionCity = db["Cities"]
 collectionwastemanagement = db["wastemanagementCollection"]
 collectionSolidWaste = db["SolidWaste"]
+## END - connecting to a collection, where our data will be stored ##
 
-# To write
-collectionCity.delete_many({})  # Destroy the collection
-# To avoid repetitions
+## START - Write operations on MongoDB ##
+collectionCity.delete_many({})  ## this line is to Destroy the collection, to avoid redundant data in MongoDB ##
 collectionwastemanagement.delete_many({})
 collectionSolidWaste.delete_many({})
 
 collectionCity.insert_many(citiesDF.to_dict('records'))
 collectionwastemanagement.insert_many(wastemanagementDF.to_dict('records'))
 collectionSolidWaste.insert_many(solidwasteDF.to_dict('records'))
+## END - Write operations on MongoDB ##
